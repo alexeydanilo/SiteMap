@@ -1,0 +1,133 @@
+﻿@{
+
+    ViewBag.Title = "Home Page";
+}
+
+@model WebApplication18.Models.PageViewModel
+
+<div id="main">
+    <div class="row">
+        <div id="graph">
+            <canvas id="myChart"> </canvas>
+        </div>
+    </div>
+
+
+  @using (Html.BeginForm("Index", "Home", FormMethod.Post))
+    {
+
+        <h1> <progress id="progressbar">Загрузка...</progress> </h1>
+        <div id="info">
+            <h4>
+                Введите URL: @Html.TextBoxFor(x => x.url)
+                <input type="submit" value="Получить SiteMap" onclick="show('block')" />
+            </h4>
+        
+        </div>
+        <div id="SiteTable">
+           
+            @for (int k = 0; k < Model.UrlMaps.Count(); k++)
+            {
+                if (Model.UrlMaps.ElementAt(k).id == (k + 1))
+                {
+                    <table id="SiteMap">
+                        <caption>
+                            <p>
+                                @Html.DisplayFor(x => x.UrlMaps.ElementAt(k).Url) |  Максимальмальное время отклика: @Html.DisplayFor(x => x.Times.ElementAt(k).MaxTime)мс |
+                                Минимальное время отклика:      @Html.DisplayFor(x => x.Times.ElementAt(k).MinTime)мс
+                            </p>
+                            
+                            <p>
+                                Оцените сайт: <input type="button" class="rb" id="@Model.UrlMaps.ElementAt(k).id" value="Хорошо" /> 
+                                <input type="button" id="@Model.UrlMaps.ElementAt(k).id" class="rb" value="Плохо" /> 
+                            </p>
+                        </caption>
+                        <thead>
+                            <tr>
+                                <th>URL</th>
+                                <th>Время отклика</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.Maps.Count(); i++)
+                            {
+                                if (Model.Maps.ElementAt(i).UrlMapId == k + 1)
+                                {
+                                    <tr>
+                                        <td> @Html.DisplayFor(x => x.Maps.ElementAt(i).SiteMap) </td>
+                                        <td> @Html.DisplayFor(x => x.Maps.ElementAt(i).Time) мс</td>
+                                    </tr>
+                                   
+                                }
+                            }
+                        </tbody>
+                    </table>
+                }
+            }
+        </div>
+    }
+</div>
+
+<script>
+    function show(state) {
+        document.getElementById('progressbar').style.display = state;
+    }
+
+    $.ajax({
+        type: "POST",
+        url: "/Home/NewChart",
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function (chData) {
+            var aData = chData;
+            var aLabels = aData[0];
+            var aDatasets1 = aData[1];
+            var dataT = {
+                labels: aLabels,
+                datasets: [{
+                    label: "Время отклика (мс)",
+                    data: aDatasets1,
+                    fill: false,
+                    backgroundColor: ["rgba(54, 162, 235, 0.2)", "rgba(255, 99, 132, 0.2)", "rgba(255, 159, 64, 0.2)", "rgba(255, 205, 86, 0.2)", "rgba(75, 192, 192, 0.2)", "rgba(153, 102, 255, 0.2)", "rgba(201, 203, 207, 0.2)"],
+                    borderColor: ["rgb(54, 162, 235)", "rgb(255, 99, 132)", "rgb(255, 159, 64)", "rgb(255, 205, 86)", "rgb(75, 192, 192)", "rgb(153, 102, 255)", "rgb(201, 203, 207)"],
+                    borderWidth: 1
+                }]
+            };
+            var ctx = $("#myChart").get(0).getContext("2d");
+            var myNewChart = new Chart(ctx, {
+                type: 'bar',
+                data: dataT,
+                options: {
+                    responsive: false,
+                    title: { display: true, text: 'Карта сайта' },
+                    legend: { position: 'bottom' },
+                    scales: {
+                        xAxes: [{ gridLines: { display: false }, display: false, scaleLabel: { display: false, labelString: '' } }],
+                        yAxes: [{ gridLines: { display: false }, display: true, scaleLabel: { display: false, labelString: '' }, ticks: { stepSize: 100, beginAtZero: true } }]
+                    },
+                }
+            });
+        }
+    });
+    $(".rb").click(function () {
+            $.ajax({
+                url: "@Url.Action("ChangeUserState", "Home")",
+                type: "POST",
+                data: {
+                    id: $(this).attr('id'),
+                    value: $(this).attr('value')
+                },
+                success: function () {
+                   
+                }
+            });
+        });
+</script>
+
+
+
+
+
+
+
+
